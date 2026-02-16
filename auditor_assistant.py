@@ -11,11 +11,11 @@ import google.generativeai as genai
 # Cargar variables de entorno
 load_dotenv()
 
-# Puerto SMTP robusto
+# Puerto SMTP robusto (465 para SSL es preferible en Render)
 try:
-    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 except (ValueError, TypeError):
-    SMTP_PORT = 587
+    SMTP_PORT = 465
 
 # Configurar Gemini
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
@@ -96,9 +96,14 @@ Un saludo,
     mensaje.attach(MIMEText(cuerpo_texto, 'plain'))
 
     try:
-        # Añadimos un timeout de 10 segundos para evitar que el servidor se cuelgue
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
-        server.starttls()
+        # Usamos SMTP_SSL para el puerto 465, que suele ser más estable en Render
+        # Aumentamos el timeout a 20 segundos
+        if SMTP_PORT == 465:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=20)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=20)
+            server.starttls()
+            
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(mensaje)
         server.quit()
