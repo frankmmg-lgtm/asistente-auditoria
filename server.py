@@ -104,11 +104,27 @@ def test_resend():
     
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
-        return jsonify({
-            "status_code": response.status_code,
-            "message": "Enviado" if response.status_code in [200, 201] else "Error en respuesta",
-            "detail": response.json() if response.ok else response.text
-        })
+        result = response.json()
+        
+        if response.status_code in [200, 201]:
+            msg_id = result.get("id")
+            # Consultar estatus
+            status_url = f"https://api.resend.com/emails/{msg_id}"
+            status_resp = requests.get(status_url, headers=headers, timeout=5)
+            status_data = status_resp.json() if status_resp.ok else status_resp.text
+            
+            return jsonify({
+                "status_code": response.status_code,
+                "message": "Enviado y Verificado",
+                "message_id": msg_id,
+                "delivery_details": status_data
+            })
+        else:
+            return jsonify({
+                "status_code": response.status_code,
+                "message": "Error en respuesta",
+                "detail": result
+            })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
