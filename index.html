@@ -198,6 +198,13 @@
                     </div>
 
                     <script>
+                        // Despertar al servidor de Render al cargar la página
+                        window.addEventListener('DOMContentLoaded', () => {
+                            fetch('https://asistente-auditoria-backend.onrender.com/')
+                                .then(res => console.log('Servidor despertando...'))
+                                .catch(err => console.error('Error despertando servidor:', err));
+                        });
+
                         document.getElementById('mainContactForm').addEventListener('submit', async function (e) {
                             e.preventDefault();
 
