@@ -49,37 +49,34 @@ def webhook():
 
 @app.route('/test_email', methods=['GET'])
 def test_email():
-    """Ruta interna para probar la conectividad SMTP."""
-    from auditor_assistant import SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
-    import smtplib
+    """Ruta interna para probar la conectividad con la API de Resend."""
+    from auditor_assistant import RESEND_API_KEY, SMTP_USER
+    import requests
     
     resultados = {
         "config": {
-            "server": SMTP_SERVER,
-            "port": SMTP_PORT,
-            "user": SMTP_USER
+            "api_key_configured": bool(RESEND_API_KEY),
+            "from_email": SMTP_USER
         },
         "tests": {}
     }
     
-    try:
-        import socket
-        socket.create_connection((SMTP_SERVER, SMTP_PORT), timeout=3)
-        resultados["tests"]["socket"] = "✅ Conexión básica exitosa"
-    except Exception as e:
-        resultados["tests"]["socket"] = f"❌ Fallo de socket (3s): {str(e)}"
+    if not RESEND_API_KEY:
+        resultados["tests"]["api"] = "❌ RESEND_API_KEY no encontrada"
+        return jsonify(resultados)
 
     try:
-        if SMTP_PORT == 465:
-            s = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=5)
+        # Probamos llamando a la API de Resend (solo para verificar validez de la clave)
+        url = "https://api.resend.com/api-keys"
+        headers = {"Authorization": f"Bearer {RESEND_API_KEY}"}
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            resultados["tests"]["api"] = "✅ API Key válida y conectada"
         else:
-            s = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
-            s.starttls()
-        s.login(SMTP_USER, SMTP_PASSWORD)
-        s.quit()
-        resultados["tests"]["smtp"] = "✅ Autenticación SMTP exitosa"
+            resultados["tests"]["api"] = f"❌ Error de API ({response.status_code}): {response.text}"
     except Exception as e:
-        resultados["tests"]["smtp"] = f"❌ Fallo SMTP: {str(e)}"
+        resultados["tests"]["api"] = f"❌ Fallo de conexión: {str(e)}"
         
     return jsonify(resultados)
 

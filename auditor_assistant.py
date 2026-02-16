@@ -1,21 +1,16 @@
 import json
 import csv
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+import google.generativeai as genai
 from datetime import datetime
 from dotenv import load_dotenv
-import google.generativeai as genai
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Puerto SMTP robusto (465 para SSL es preferible en Render)
-try:
-    SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
-except (ValueError, TypeError):
-    SMTP_PORT = 465
+# Configuración de Resend
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
 # Configurar Gemini
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
@@ -24,9 +19,9 @@ if GEMINI_KEY:
 model = genai.GenerativeModel('gemini-flash-latest')
 
 # Configuración de Correo
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+# En Resend, el Remitente debe estar verificado. 
+# Si no tienes dominio, usa: "onboarding@resend.dev"
+SMTP_USER = os.getenv("SMTP_USER", "onboarding@resend.dev")
 AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
 
 # Archivo de seguimiento
@@ -70,54 +65,60 @@ def clasificar_con_ia(email_data):
             razon_amigable = "Límite de mensajes temporales alcanzado (Cortesía de Google). Procesando como lead importante por defecto."
         else:
             # Recortamos otros errores
-            razon_amigable = (full_error[:100] + '...') if len(full_error) > 100 else full_error
+            razon_amigable = full_error[:100] + "..." if len(full_error) > 100 else full_error
         
         return "Lead bueno", "Alta", razon_amigable
 
 def enviar_email_automatico(email_destino, nombre_cliente):
     """
-    Envía la respuesta profesional predefinida.
+    Envía la respuesta profesional predefinida usando la API de Resend.
     """
-    if not SMTP_USER or not SMTP_PASSWORD:
-        error_msg = "Error: Credenciales SMTP no configuradas en el servidor."
+    if not RESEND_API_KEY:
+        error_msg = "Error: RESEND_API_KEY no configurada en el servidor."
         print(error_msg)
         return False, error_msg
 
-    mensaje = MIMEMultipart()
-    mensaje['From'] = SMTP_USER
-    mensaje['To'] = email_destino
-    mensaje['Subject'] = "Re: Solicitud de información - Auditoría"
-
     cuerpo_texto = f"""
 Hola {nombre_cliente},
-Gracias por contactar.
-Para poder orientarle correctamente, ¿podría indicarnos:
 
+Gracias por contactar con nosotros.
+
+Para poder orientarle correctamente, ¿podría indicarnos:
 - Tipo de empresa y sector
-- Qué necesita exactamente (auditoría, revisión, due diligence, etc.)
+- Qué necesita exactamente (auditoría, revisión, etc.)
 - Plazo o fecha objetivo
 
-En cuanto lo tengamos, le proponemos una llamada breve.
-Un saludo,
+En cuanto recibamos estos datos, le propondremos una llamada breve para profundizar.
+
+Un saludo cordial,
 {AUDITOR_NAME}
 """
-    mensaje.attach(MIMEText(cuerpo_texto, 'plain'))
 
     try:
-        # Usamos SMTP_SSL para el puerto 465, que suele ser más estable en Render
-        # Aumentamos el timeout a 20 segundos
-        if SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=20)
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "from": f"{AUDITOR_NAME} <{SMTP_USER}>",
+            "to": [email_destino], # Resend acepta una lista
+            "subject": "Re: Solicitud de información - Auditoría",
+            "text": cuerpo_texto
+        }
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        
+        if response.status_code in [200, 201]:
+            return True, ""
         else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=20)
-            server.starttls()
+            error_data = response.json()
+            error_msg = f"Error Resend ({response.status_code}): {error_data.get('message', 'Desconocido')}"
+            print(error_msg)
+            return False, error_msg
             
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(mensaje)
-        server.quit()
-        return True, ""
     except Exception as e:
-        error_msg = f"Error SMTP: {str(e)}"
+        error_msg = f"Error de Conexión API: {str(e)}"
         print(error_msg)
         return False, error_msg
 
