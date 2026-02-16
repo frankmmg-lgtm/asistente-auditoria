@@ -11,16 +11,23 @@ import google.generativeai as genai
 # Cargar variables de entorno
 load_dotenv()
 
+# Puerto SMTP robusto
+try:
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+except (ValueError, TypeError):
+    SMTP_PORT = 587
+
 # Configurar Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-flash-latest')
 
 # Configuración de Correo
 SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-AUDITOR_NAME = os.getenv("AUDITOR_NAME")
+AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
 
 # Archivo de seguimiento
 ARCH_SEGUIMIENTO = "seguimiento_leads.csv"
@@ -101,23 +108,26 @@ def registrar_lead(email_data, clasificacion, prioridad, razon):
     if clasificacion == "No relevante":
         return
 
-    file_exists = os.path.isfile(ARCH_SEGUIMIENTO)
-    with open(ARCH_SEGUIMIENTO, mode='a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(["Fecha", "Nombre", "Email", "Asunto", "Clasificación", "Prioridad", "Razón", "Estatus", "Email Enviado"])
-        
-        writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M"),
-            email_data['remitente'],
-            email_data['email'],
-            email_data['asunto'],
-            clasificacion,
-            prioridad,
-            razon,
-            "Pendiente",
-            "Sí" if clasificacion == "Lead bueno" else "No"
-        ])
+    try:
+        file_exists = os.path.isfile(ARCH_SEGUIMIENTO)
+        with open(ARCH_SEGUIMIENTO, mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["Fecha", "Nombre", "Email", "Asunto", "Clasificación", "Prioridad", "Razón", "Estatus", "Email Enviado"])
+            
+            writer.writerow([
+                datetime.now().strftime("%Y-%m-%d %H:%M"),
+                email_data['remitente'],
+                email_data['email'],
+                email_data['asunto'],
+                clasificacion,
+                prioridad,
+                razon,
+                "Pendiente",
+                "Sí" if clasificacion == "Lead bueno" else "No"
+            ])
+    except Exception as e:
+        print(f"Advertencia: No se pudo registrar el lead en el CSV: {e}")
 
 def procesar_nuevo_contacto(email_data):
     """
