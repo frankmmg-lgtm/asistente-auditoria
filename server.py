@@ -53,19 +53,23 @@ def webhook():
 @app.route('/test_email', methods=['GET'])
 def test_email():
     """Ruta interna para verificar la configuración sin ataques de red."""
-    from auditor_assistant import RESEND_API_KEY, SMTP_USER
+    from auditor_assistant import get_config
     
+    config = get_config()
+    resend_key = config.get("RESEND_API_KEY", "")
+    from_email = config.get("SMTP_USER", "")
+
     # Mask key for safety
     masked_key = "No configurada"
-    if RESEND_API_KEY:
-        masked_key = f"{RESEND_API_KEY[:6]}...{RESEND_API_KEY[-4:]}"
+    if resend_key:
+        masked_key = f"{resend_key[:6]}...{resend_key[-4:]}"
 
     return jsonify({
         "status": "diagnostic",
         "config": {
-            "resend_api_key_present": bool(RESEND_API_KEY),
+            "resend_api_key_present": bool(resend_key),
             "resend_api_key_masked": masked_key,
-            "from_email": SMTP_USER
+            "from_email": from_email
         },
         "instructions": "Prueba /test_resend para verificar la conexión real con Resend.com"
     })
@@ -73,16 +77,19 @@ def test_email():
 @app.route('/test_resend', methods=['GET'])
 def test_resend():
     """Prueba real de conexión con la API de Resend."""
-    from auditor_assistant import RESEND_API_KEY
+    from auditor_assistant import get_config
     import requests
     
-    if not RESEND_API_KEY:
+    config = get_config()
+    resend_key = config.get("RESEND_API_KEY", "")
+    
+    if not resend_key:
         return jsonify({"error": "RESEND_API_KEY no configurada"}), 400
 
     try:
         # Probamos una llamada simple a la API de Resend con un timeout agresivo
         url = "https://api.resend.com/api-keys"
-        headers = {"Authorization": f"Bearer {RESEND_API_KEY}"}
+        headers = {"Authorization": f"Bearer {resend_key}"}
         response = requests.get(url, headers=headers, timeout=3)
         
         return jsonify({

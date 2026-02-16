@@ -1,33 +1,30 @@
-import json
-import csv
-import os
-import requests
-import google.generativeai as genai
-from datetime import datetime
-from dotenv import load_dotenv
+# Datos del Auditor (Defaults)
+DEFAULT_AUDITOR_NAME = "Equipo de Auditoría"
+DEFAULT_SMTP_USER = "onboarding@resend.dev"
 
-# Cargar variables de entorno
-load_dotenv()
-
-# Configuración de Resend
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-
-# Datos del Auditor
-AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
-SMTP_USER = os.getenv("SMTP_USER", "onboarding@resend.dev")
-
-# Archivo de seguimiento
-ARCH_SEGUIMIENTO = os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
-if not os.access(".", os.W_OK):
-    ARCH_SEGUIMIENTO = "/tmp/seguimiento_leads.csv"
+def get_config():
+    from dotenv import load_dotenv
+    load_dotenv()
+    return {
+        "RESEND_API_KEY": os.getenv("RESEND_API_KEY", ""),
+        "AUDITOR_NAME": os.getenv("AUDITOR_NAME", DEFAULT_AUDITOR_NAME),
+        "SMTP_USER": os.getenv("SMTP_USER", DEFAULT_SMTP_USER),
+        "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY", ""),
+        "ARCH_SEGUIMIENTO": os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
+    }
 
 def clasificar_con_ia(email_data):
     """
     Usa Gemini para clasificar el email según los criterios del auditor.
     """
-    gemini_key = os.getenv("GEMINI_API_KEY")
+    import json
+    import google.generativeai as genai
+    
+    config = get_config()
+    gemini_key = config["GEMINI_API_KEY"]
+    
     if not gemini_key:
-        return "Lead bueno", "Alta", "Error: GEMINI_API_KEY no configurada. Procesando como importante por seguridad."
+        return "Lead bueno", "Alta", "Error: GEMINI_API_KEY no configurada."
 
     try:
         genai.configure(api_key=gemini_key)
@@ -94,13 +91,19 @@ Un saludo cordial,
 """
 
     try:
+        import requests
+        config = get_config()
+        resend_key = config["RESEND_API_KEY"]
+        auditor_name = config["AUDITOR_NAME"]
+        smtp_user = config["SMTP_USER"]
+
         url = "https://api.resend.com/emails"
         headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Authorization": f"Bearer {resend_key}",
             "Content-Type": "application/json"
         }
         payload = {
-            "from": f"{AUDITOR_NAME} <{SMTP_USER}>",
+            "from": f"{auditor_name} <{smtp_user}>",
             "to": [email_destino], # Resend acepta una lista
             "subject": "Re: Solicitud de información - Auditoría",
             "text": cuerpo_texto
@@ -125,9 +128,19 @@ def registrar_lead(email_data, clasificacion, prioridad, razon, email_error=None
     if clasificacion == "No relevante":
         return
 
+    import csv
+    from datetime import datetime
+
+    config = get_config()
+    arch_seguimiento = config["ARCH_SEGUIMIENTO"]
+    
+    # Check write access
+    if not os.access(".", os.W_OK):
+        arch_seguimiento = "/tmp/seguimiento_leads.csv"
+
     try:
-        file_exists = os.path.isfile(ARCH_SEGUIMIENTO)
-        with open(ARCH_SEGUIMIENTO, mode='a', newline='', encoding='utf-8') as f:
+        file_exists = os.path.isfile(arch_seguimiento)
+        with open(arch_seguimiento, mode='a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             if not file_exists:
                 writer.writerow(["Fecha", "Nombre", "Email", "Asunto", "Clasificación", "Prioridad", "Razón", "Estatus", "Email Enviado"])
