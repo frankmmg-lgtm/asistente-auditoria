@@ -1,3 +1,5 @@
+import os
+
 # Datos del Auditor (Defaults)
 DEFAULT_AUDITOR_NAME = "Equipo de Auditoría"
 DEFAULT_SMTP_USER = "onboarding@resend.dev"
