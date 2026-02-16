@@ -233,19 +233,25 @@
 
                                 if (response.ok) {
                                     const reporte = result.reporte;
-                                    let mensajeFinal = `¡Gracias! (v1.1) Su mensaje ha sido enviado correctamente.\n\n`;
-                                    mensajeFinal += `Clasificación: ${reporte.clasificacion}\n`;
-                                    mensajeFinal += `Razón: ${reporte.razon}\n`;
+                                    let mensajeFinal = `¡Gracias! (v1.2) Su mensaje ha sido procesado.\n\n`;
 
+                                    // Ponemos el estatus del email arriba del todo
                                     if (reporte.email_intentado) {
                                         if (reporte.email_enviado) {
-                                            mensajeFinal += `✅ El correo de respuesta automática se ha enviado con éxito.`;
+                                            mensajeFinal += `✅ EMAIL ENVIADO con éxito.\n\n`;
                                         } else {
-                                            mensajeFinal += `⚠️ Error al enviar correo: ${reporte.email_error || 'Timeout'}\n`;
-                                            mensajeFinal += `(Su lead ha sido registrado correctamente en la base de datos).`;
+                                            mensajeFinal += `⚠️ ERROR DE ENVÍO: ${reporte.email_error || 'Timeout'}\n\n`;
                                         }
                                     } else {
-                                        mensajeFinal += `ℹ️ Este tipo de consulta no requiere respuesta automática inmediata.`;
+                                        mensajeFinal += `ℹ️ No se requiere respuesta automática.\n\n`;
+                                    }
+
+                                    mensajeFinal += `Detalles técnicos:\n`;
+                                    mensajeFinal += `- Clasificación: ${reporte.clasificacion}\n`;
+                                    mensajeFinal += `- Razón: ${reporte.razon}\n`;
+
+                                    if (!reporte.email_enviado && reporte.email_intentado) {
+                                        mensajeFinal += `\n(Nota: Su mensaje se ha guardado en el servidor aunque el email haya fallado).`;
                                     }
 
                                     alert(mensajeFinal);
