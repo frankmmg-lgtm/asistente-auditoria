@@ -24,9 +24,9 @@ if GEMINI_KEY:
 model = genai.GenerativeModel('gemini-flash-latest')
 
 # Configuración de Correo
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
 
 # Archivo de seguimiento
