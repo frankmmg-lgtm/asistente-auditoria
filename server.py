@@ -100,6 +100,17 @@ def test_resend():
     except Exception as e:
         return jsonify({"error": f"Fallo de conexión: {str(e)}"}), 500
 
+@app.route('/test_env_keys', methods=['GET'])
+def test_env_keys():
+    """Ruta de diagnóstico para listar CLAVES de entorno (sin valores)."""
+    import os
+    keys = sorted(os.environ.keys())
+    return jsonify({
+        "status": "diagnostic",
+        "env_keys": keys,
+        "message": "Usa esto para verificar si RESEND_API_KEY aparece en la lista exactamente con ese nombre."
+    })
+
 if __name__ == '__main__':
     # Ejecutar en el puerto 5000 (debug=False para evitar reinicios bruscos en Windows)
     app.run(port=5000, debug=False)
