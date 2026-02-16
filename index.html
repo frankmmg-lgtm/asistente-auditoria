@@ -241,7 +241,8 @@
                                         if (reporte.email_enviado) {
                                             mensajeFinal += `✅ El correo de respuesta automática se ha enviado con éxito.`;
                                         } else {
-                                            mensajeFinal += `⚠️ Hubo un problema al enviar el correo automático (timeout), pero su lead ha quedado registrado.`;
+                                            mensajeFinal += `⚠️ Error al enviar correo: ${reporte.email_error || 'Timeout'}\n`;
+                                            mensajeFinal += `(Su lead ha sido registrado correctamente en la base de datos).`;
                                         }
                                     } else {
                                         mensajeFinal += `ℹ️ Este tipo de consulta no requiere respuesta automática inmediata.`;

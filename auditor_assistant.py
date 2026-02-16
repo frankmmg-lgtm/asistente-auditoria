@@ -73,8 +73,9 @@ def enviar_email_automatico(email_destino, nombre_cliente):
     Envía la respuesta profesional predefinida.
     """
     if not SMTP_USER or not SMTP_PASSWORD:
-        print("Error: Credenciales SMTP no configuradas.")
-        return False
+        error_msg = "Error: Credenciales SMTP no configuradas en el servidor."
+        print(error_msg)
+        return False, error_msg
 
     mensaje = MIMEMultipart()
     mensaje['From'] = SMTP_USER
@@ -108,12 +109,13 @@ Un saludo,
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(mensaje)
         server.quit()
-        return True
+        return True, ""
     except Exception as e:
-        print(f"Error enviando email: {e}")
-        return False
+        error_msg = f"Error SMTP: {str(e)}"
+        print(error_msg)
+        return False, error_msg
 
-def registrar_lead(email_data, clasificacion, prioridad, razon):
+def registrar_lead(email_data, clasificacion, prioridad, razon, email_error=None):
     if clasificacion == "No relevante":
         return
 
@@ -150,22 +152,24 @@ def procesar_nuevo_contacto(email_data):
     
     envio_intentado = False
     envio_exitoso = False
+    error_email = ""
     if clasificacion == "Lead bueno":
         envio_intentado = True
-        envio_exitoso = enviar_email_automatico(email_data['email'], email_data['remitente'])
+        envio_exitoso, error_email = enviar_email_automatico(email_data['email'], email_data['remitente'])
         if envio_exitoso:
             print("Correo de respuesta enviado con éxito.")
         else:
-            print("Fallo en el envío del correo automático.")
+            print(f"Fallo en el envío: {error_email}")
     
-    registrar_lead(email_data, clasificacion, prioridad, razon)
+    registrar_lead(email_data, clasificacion, prioridad, razon, error_email)
     
     return {
         "clasificacion": clasificacion,
         "prioridad": prioridad,
         "razon": razon,
         "email_enviado": envio_exitoso,
-        "email_intentado": envio_intentado
+        "email_intentado": envio_intentado,
+        "email_error": error_email
     }
 
 if __name__ == "__main__":
