@@ -63,9 +63,10 @@ def clasificar_con_ia(email_data):
         resultado = json.loads(json_text)
         return resultado.get("clasificacion", "Lead dudoso"), resultado.get("prioridad", "Media"), resultado.get("razon", "")
     except Exception as e:
-        error_msg = f"Error en IA: {str(e)}"
+        error_msg = f"Error en IA (Quota/Network): {str(e)}"
         print(error_msg)
-        return "Lead dudoso", "Media", error_msg
+        # Fallback proactivo: ante la duda, lo tratamos como lead bueno para no perder clientes
+        return "Lead bueno", "Alta", error_msg
 
 def enviar_email_automatico(email_destino, nombre_cliente):
     """
