@@ -43,12 +43,9 @@ def webhook():
             "mensaje": "Contacto procesado correctamente"
         }), 200
     except Exception as e:
-        error_info = {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-        print(f"ERROR: {error_info}")
-        return jsonify(error_info), 500
+        print(f"CRITICAL ERROR: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": "Error interno del servidor", "detalle": str(e)}), 500
 
 if __name__ == '__main__':
     # Ejecutar en el puerto 5000 (debug=False para evitar reinicios bruscos en Windows)
