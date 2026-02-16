@@ -12,17 +12,9 @@ load_dotenv()
 # Configuración de Resend
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
-# Configurar Gemini
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-flash-latest')
-
-# Configuración de Correo
-# En Resend, el Remitente debe estar verificado. 
-# Si no tienes dominio, usa: "onboarding@resend.dev"
-SMTP_USER = os.getenv("SMTP_USER", "onboarding@resend.dev")
+# Datos del Auditor
 AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
+SMTP_USER = os.getenv("SMTP_USER", "onboarding@resend.dev")
 
 # Archivo de seguimiento
 ARCH_SEGUIMIENTO = os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
@@ -33,7 +25,15 @@ def clasificar_con_ia(email_data):
     """
     Usa Gemini para clasificar el email según los criterios del auditor.
     """
-    prompt = f"""
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key:
+        return "Lead bueno", "Alta", "Error: GEMINI_API_KEY no configurada. Procesando como importante por seguridad."
+
+    try:
+        genai.configure(api_key=gemini_key)
+        model = genai.GenerativeModel('gemini-flash-latest')
+        
+        prompt = f"""
     Eres un asistente experto para un auditor en España. Tu objetivo es clasificar el interés de un cliente potential.
     
     Remitente: {email_data['remitente']}
@@ -50,8 +50,7 @@ def clasificar_con_ia(email_data):
     "prioridad": (Alta / Media / Baja),
     "razon": (breve explicación de por qué lo has clasificado así)
     """
-    
-    try:
+        
         response = model.generate_content(prompt)
         # Limpiar la respuesta por si viene con markdown
         json_text = response.text.strip().replace('```json', '').replace('```', '')
