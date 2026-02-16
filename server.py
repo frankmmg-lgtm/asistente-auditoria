@@ -64,16 +64,16 @@ def test_email():
     
     try:
         import socket
-        socket.create_connection((SMTP_SERVER, SMTP_PORT), timeout=5)
+        socket.create_connection((SMTP_SERVER, SMTP_PORT), timeout=3)
         resultados["tests"]["socket"] = "✅ Conexión básica exitosa"
     except Exception as e:
-        resultados["tests"]["socket"] = f"❌ Fallo de socket: {str(e)}"
+        resultados["tests"]["socket"] = f"❌ Fallo de socket (3s): {str(e)}"
 
     try:
         if SMTP_PORT == 465:
-            s = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10)
+            s = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=5)
         else:
-            s = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+            s = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
             s.starttls()
         s.login(SMTP_USER, SMTP_PASSWORD)
         s.quit()
