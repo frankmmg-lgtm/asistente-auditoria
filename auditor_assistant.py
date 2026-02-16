@@ -110,7 +110,7 @@ Un saludo cordial,
             "Content-Type": "application/json"
         }
         payload = {
-            "from": f"{auditor_name} <{smtp_user}>",
+            "from": f"{auditor_name} <onboarding@resend.dev>",
             "to": [email_destino],
             "subject": "Re: Solicitud de información - Auditoría",
             "text": cuerpo_texto
