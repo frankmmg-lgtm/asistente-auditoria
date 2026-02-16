@@ -1,7 +1,7 @@
 import os
 
 # Configuración Global
-VERSION = "1.4-DEFENSIVE"
+VERSION = "1.4.2-TRACE"
 DEFAULT_AUDITOR_NAME = "Equipo de Auditoría"
 DEFAULT_SMTP_USER = "onboarding@resend.dev"
 
