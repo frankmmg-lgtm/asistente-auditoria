@@ -98,7 +98,7 @@ Para poder orientarle correctamente, ¿podría indicarnos:
 En cuanto recibamos estos datos, le propondremos una llamada breve para profundizar.
 
 Un saludo cordial,
-{AUDITOR_NAME}
+{auditor_name}
 """
 
     try:
