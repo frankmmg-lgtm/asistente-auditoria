@@ -7,6 +7,9 @@ import traceback
 app = Flask(__name__)
 CORS(app) # Habilitar CORS para todas las rutas
 
+# Versión del servidor
+from auditor_assistant import VERSION
+
 @app.route('/', methods=['GET'])
 def home():
     """Ruta de verificación para confirmar que el servidor está activo."""
@@ -66,10 +69,11 @@ def test_email():
 
     return jsonify({
         "status": "diagnostic",
+        "version": VERSION,
         "config": {
             "resend_api_key_present": bool(resend_key),
             "resend_api_key_masked": masked_key,
-            "from_email": from_email
+            "actual_sender": "Auditor <onboarding@resend.dev>"
         },
         "instructions": "Prueba /test_resend para verificar la conexión real con Resend.com"
     })

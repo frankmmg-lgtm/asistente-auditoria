@@ -1,6 +1,7 @@
 import os
 
-# Datos del Auditor (Defaults)
+# Configuración Global
+VERSION = "1.4-DEFENSIVE"
 DEFAULT_AUDITOR_NAME = "Equipo de Auditoría"
 DEFAULT_SMTP_USER = "onboarding@resend.dev"
 
@@ -104,13 +105,16 @@ Un saludo cordial,
     try:
         import requests
         
+        # SENDER FORZADO PARA TRIAL DE RESEND (onboarding@resend.dev)
+        sender_forzado = "onboarding@resend.dev"
+        
         url = "https://api.resend.com/emails"
         headers = {
             "Authorization": f"Bearer {resend_api_key}",
             "Content-Type": "application/json"
         }
         payload = {
-            "from": f"{auditor_name} <onboarding@resend.dev>",
+            "from": f"Auditor <{sender_forzado}>",
             "to": [email_destino],
             "subject": "Re: Solicitud de información - Auditoría",
             "text": cuerpo_texto
