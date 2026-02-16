@@ -36,10 +36,10 @@ def webhook():
 
     try:
         # Llamamos a nuestra lógica principal
-        clasificacion = procesar_nuevo_contacto(email_data)
+        reporte = procesar_nuevo_contacto(email_data)
         return jsonify({
             "status": "success",
-            "clasificacion": clasificacion,
+            "reporte": reporte,
             "mensaje": "Contacto procesado correctamente"
         }), 200
     except Exception as e:

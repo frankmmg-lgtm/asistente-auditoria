@@ -232,10 +232,25 @@
                                 const result = await response.json();
 
                                 if (response.ok) {
-                                    alert('¡Gracias! Su mensaje ha sido enviado correctamente y será procesado.');
+                                    const reporte = result.reporte;
+                                    let mensajeFinal = `¡Gracias! Su mensaje ha sido enviado correctamente.\n\n`;
+                                    mensajeFinal += `Clasificación: ${reporte.clasificacion}\n`;
+                                    mensajeFinal += `Razón: ${reporte.razon}\n`;
+
+                                    if (reporte.email_intentado) {
+                                        if (reporte.email_enviado) {
+                                            mensajeFinal += `✅ El correo de respuesta automática se ha enviado con éxito.`;
+                                        } else {
+                                            mensajeFinal += `⚠️ Hubo un problema al enviar el correo automático (timeout), pero su lead ha quedado registrado.`;
+                                        }
+                                    } else {
+                                        mensajeFinal += `ℹ️ Este tipo de consulta no requiere respuesta automática inmediata.`;
+                                    }
+
+                                    alert(mensajeFinal);
                                     this.reset();
                                 } else {
-                                    alert('Hubo un error: ' + (result.error || 'Error desconocido'));
+                                    alert('Hubo un error en el servidor: ' + (result.detalle || result.error || 'Error desconocido'));
                                 }
                             } catch (error) {
                                 console.error('Error:', error);

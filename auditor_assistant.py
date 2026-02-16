@@ -39,21 +39,21 @@ def clasificar_con_ia(email_data):
     Usa Gemini para clasificar el email según los criterios del auditor.
     """
     prompt = f"""
-    Eres un asistente para un auditor en España. Clasifica el siguiente contacto:
+    Eres un asistente experto para un auditor en España. Tu objetivo es clasificar el interés de un cliente potential.
     
     Remitente: {email_data['remitente']}
     Asunto: {email_data['asunto']}
     Cuerpo: {email_data['cuerpo']}
     
-    Criterios de clasificación:
-    1) "Lead bueno" (prioridad alta): Empresa real, necesita auditoría/revisión/consultoría, hay urgencia o fecha, deja datos.
-    2) "Lead dudoso" (prioridad media): Pregunta genérica, faltan datos, interesante pero incompleto.
-    3) "No relevante" (prioridad baja): Spam, empleo, proveedores, fuera de servicio.
+    Criterios de clasificación ESTRICTOS:
+    1) "Lead bueno" (prioridad alta): Cualquier solicitud de auditoría, revisión, consultoría ISO, presupuestos, o contacto directo de empresa. NO importa si faltan datos técnicos, si es un cliente potencial real, es un lead bueno.
+    2) "Lead dudoso" (prioridad media): Preguntas muy genéricas sobre el sector sin intención de contratación clara, o estudiantes.
+    3) "No relevante" (prioridad baja): Spam obvio, ofertas de trabajo (CVs), publicidad, o insultos.
     
     Responde ÚNICAMENTE en formato JSON con estas llaves:
     "clasificacion": (Lead bueno / Lead dudoso / No relevante),
     "prioridad": (Alta / Media / Baja),
-    "razon": (breve explicación)
+    "razon": (breve explicación de por qué lo has clasificado así)
     """
     
     try:
@@ -135,20 +135,32 @@ def registrar_lead(email_data, clasificacion, prioridad, razon):
 def procesar_nuevo_contacto(email_data):
     """
     Función principal para procesar un contacto individual.
+    Retorna un diccionario con todo el detalle del proceso.
     """
     print(f"Procesando contacto de: {email_data['remitente']}...")
     
     clasificacion, prioridad, razon = clasificar_con_ia(email_data)
     print(f"Resultado: {clasificacion} ({prioridad})")
     
-    exito_envio = False
+    envio_intentado = False
+    envio_exitoso = False
     if clasificacion == "Lead bueno":
-        exito_envio = enviar_email_automatico(email_data['email'], email_data['remitente'])
-        if exito_envio:
+        envio_intentado = True
+        envio_exitoso = enviar_email_automatico(email_data['email'], email_data['remitente'])
+        if envio_exitoso:
             print("Correo de respuesta enviado con éxito.")
+        else:
+            print("Fallo en el envío del correo automático.")
     
     registrar_lead(email_data, clasificacion, prioridad, razon)
-    return clasificacion
+    
+    return {
+        "clasificacion": clasificacion,
+        "prioridad": prioridad,
+        "razon": razon,
+        "email_enviado": envio_exitoso,
+        "email_intentado": envio_intentado
+    }
 
 if __name__ == "__main__":
     # Prueba rápida con un lead bueno
