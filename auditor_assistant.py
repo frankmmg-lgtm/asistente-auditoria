@@ -5,14 +5,19 @@ DEFAULT_AUDITOR_NAME = "Equipo de Auditoría"
 DEFAULT_SMTP_USER = "onboarding@resend.dev"
 
 def get_config():
-    from dotenv import load_dotenv
-    load_dotenv()
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except:
+        pass
+    
+    # Prioridad: variables de entorno reales del sistema
     return {
-        "RESEND_API_KEY": os.getenv("RESEND_API_KEY", ""),
-        "AUDITOR_NAME": os.getenv("AUDITOR_NAME", DEFAULT_AUDITOR_NAME),
-        "SMTP_USER": os.getenv("SMTP_USER", DEFAULT_SMTP_USER),
-        "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY", ""),
-        "ARCH_SEGUIMIENTO": os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
+        "RESEND_API_KEY": os.environ.get("RESEND_API_KEY") or os.getenv("RESEND_API_KEY", ""),
+        "AUDITOR_NAME": os.environ.get("AUDITOR_NAME") or os.getenv("AUDITOR_NAME", DEFAULT_AUDITOR_NAME),
+        "SMTP_USER": os.environ.get("SMTP_USER") or os.getenv("SMTP_USER", DEFAULT_SMTP_USER),
+        "GEMINI_API_KEY": os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY", ""),
+        "ARCH_SEGUIMIENTO": os.environ.get("ARCH_SEGUIMIENTO") or os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
     }
 
 def clasificar_con_ia(email_data):
@@ -60,9 +65,8 @@ def clasificar_con_ia(email_data):
         print(f"Error en IA: {full_error}")
         # Si es un error de cuota (429), damos un mensaje más amigable
         if "429" in full_error:
-            razon_amigable = "Límite de mensajes temporales alcanzado (Cortesía de Google). Procesando como lead importante por defecto."
+            razon_amigable = "Límite de mensajes alcanzado. Procesando como importante."
         else:
-            # Recortamos otros errores
             razon_amigable = full_error[:100] + "..." if len(full_error) > 100 else full_error
         
         return "Lead bueno", "Alta", razon_amigable
@@ -71,7 +75,12 @@ def enviar_email_automatico(email_destino, nombre_cliente):
     """
     Envía la respuesta profesional predefinida usando la API de Resend.
     """
-    if not RESEND_API_KEY:
+    config = get_config()
+    resend_api_key = config.get("RESEND_API_KEY", "")
+    auditor_name = config.get("AUDITOR_NAME")
+    smtp_user = config.get("SMTP_USER")
+
+    if not resend_api_key:
         error_msg = "Error: RESEND_API_KEY no configurada en el servidor."
         print(error_msg)
         return False, error_msg
@@ -94,19 +103,15 @@ Un saludo cordial,
 
     try:
         import requests
-        config = get_config()
-        resend_key = config["RESEND_API_KEY"]
-        auditor_name = config["AUDITOR_NAME"]
-        smtp_user = config["SMTP_USER"]
-
+        
         url = "https://api.resend.com/emails"
         headers = {
-            "Authorization": f"Bearer {resend_key}",
+            "Authorization": f"Bearer {resend_api_key}",
             "Content-Type": "application/json"
         }
         payload = {
             "from": f"{auditor_name} <{smtp_user}>",
-            "to": [email_destino], # Resend acepta una lista
+            "to": [email_destino],
             "subject": "Re: Solicitud de información - Auditoría",
             "text": cuerpo_texto
         }
