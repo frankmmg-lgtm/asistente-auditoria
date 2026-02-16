@@ -96,7 +96,8 @@ Un saludo,
     mensaje.attach(MIMEText(cuerpo_texto, 'plain'))
 
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        # Añadimos un timeout de 10 segundos para evitar que el servidor se cuelgue
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(mensaje)
