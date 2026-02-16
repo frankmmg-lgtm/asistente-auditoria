@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from auditor_assistant import procesar_nuevo_contacto
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app) # Habilitar CORS para todas las rutas
@@ -42,7 +43,12 @@ def webhook():
             "mensaje": "Contacto procesado correctamente"
         }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error_info = {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+        print(f"ERROR: {error_info}")
+        return jsonify(error_info), 500
 
 if __name__ == '__main__':
     # Ejecutar en el puerto 5000 (debug=False para evitar reinicios bruscos en Windows)
