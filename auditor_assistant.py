@@ -64,10 +64,15 @@ def clasificar_con_ia(email_data):
         return resultado.get("clasificacion", "Lead dudoso"), resultado.get("prioridad", "Media"), resultado.get("razon", "")
     except Exception as e:
         full_error = str(e)
-        # Recortamos el error si es muy largo (especialmente los de cuota de Google)
-        error_msg = (full_error[:100] + '...') if len(full_error) > 100 else full_error
         print(f"Error en IA: {full_error}")
-        return "Lead bueno", "Alta", f"Error IA: {error_msg}"
+        # Si es un error de cuota (429), damos un mensaje más amigable
+        if "429" in full_error:
+            razon_amigable = "Límite de mensajes temporales alcanzado (Cortesía de Google). Procesando como lead importante por defecto."
+        else:
+            # Recortamos otros errores
+            razon_amigable = (full_error[:100] + '...') if len(full_error) > 100 else full_error
+        
+        return "Lead bueno", "Alta", razon_amigable
 
 def enviar_email_automatico(email_destino, nombre_cliente):
     """

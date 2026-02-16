@@ -47,6 +47,42 @@ def webhook():
         traceback.print_exc()
         return jsonify({"error": "Error interno del servidor", "detalle": str(e)}), 500
 
+@app.route('/test_email', methods=['GET'])
+def test_email():
+    """Ruta interna para probar la conectividad SMTP."""
+    from auditor_assistant import SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+    import smtplib
+    
+    resultados = {
+        "config": {
+            "server": SMTP_SERVER,
+            "port": SMTP_PORT,
+            "user": SMTP_USER
+        },
+        "tests": {}
+    }
+    
+    try:
+        import socket
+        socket.create_connection((SMTP_SERVER, SMTP_PORT), timeout=5)
+        resultados["tests"]["socket"] = "✅ Conexión básica exitosa"
+    except Exception as e:
+        resultados["tests"]["socket"] = f"❌ Fallo de socket: {str(e)}"
+
+    try:
+        if SMTP_PORT == 465:
+            s = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10)
+        else:
+            s = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+            s.starttls()
+        s.login(SMTP_USER, SMTP_PASSWORD)
+        s.quit()
+        resultados["tests"]["smtp"] = "✅ Autenticación SMTP exitosa"
+    except Exception as e:
+        resultados["tests"]["smtp"] = f"❌ Fallo SMTP: {str(e)}"
+        
+    return jsonify(resultados)
+
 if __name__ == '__main__':
     # Ejecutar en el puerto 5000 (debug=False para evitar reinicios bruscos en Windows)
     app.run(port=5000, debug=False)
