@@ -139,10 +139,10 @@ def procesar_nuevo_contacto(email_data):
     print(f"Resultado: {clasificacion} ({prioridad})")
     
     exito_envio = False
-    if clasificacion == "Lead bueno":
-        exito_envio = enviar_email_automatico(email_data['email'], email_data['remitente'])
-        if exito_envio:
-            print("Correo de respuesta enviado con éxito.")
+    # if clasificacion == "Lead bueno":
+    #     exito_envio = enviar_email_automatico(email_data['email'], email_data['remitente'])
+    #     if exito_envio:
+    #         print("Correo de respuesta enviado con éxito.")
     
     registrar_lead(email_data, clasificacion, prioridad, razon)
     return clasificacion
