@@ -30,7 +30,9 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 AUDITOR_NAME = os.getenv("AUDITOR_NAME", "Equipo de Auditoría")
 
 # Archivo de seguimiento
-ARCH_SEGUIMIENTO = "seguimiento_leads.csv"
+ARCH_SEGUIMIENTO = os.getenv("ARCH_SEGUIMIENTO", "seguimiento_leads.csv")
+if not os.access(".", os.W_OK):
+    ARCH_SEGUIMIENTO = "/tmp/seguimiento_leads.csv"
 
 def clasificar_con_ia(email_data):
     """
@@ -139,10 +141,10 @@ def procesar_nuevo_contacto(email_data):
     print(f"Resultado: {clasificacion} ({prioridad})")
     
     exito_envio = False
-    # if clasificacion == "Lead bueno":
-    #     exito_envio = enviar_email_automatico(email_data['email'], email_data['remitente'])
-    #     if exito_envio:
-    #         print("Correo de respuesta enviado con éxito.")
+    if clasificacion == "Lead bueno":
+        exito_envio = enviar_email_automatico(email_data['email'], email_data['remitente'])
+        if exito_envio:
+            print("Correo de respuesta enviado con éxito.")
     
     registrar_lead(email_data, clasificacion, prioridad, razon)
     return clasificacion
