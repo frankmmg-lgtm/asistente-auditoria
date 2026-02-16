@@ -90,19 +90,27 @@ def test_resend():
     if not resend_key:
         return jsonify({"error": "RESEND_API_KEY no configurada"}), 400
 
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {resend_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "from": "onboarding@resend.dev",
+        "to": ["frankmmg@gmail.com"],
+        "subject": "Prueba de Diagnóstico v1.4.1",
+        "text": "Si recibes esto, el servidor DE VERDAD puede enviar correos a frankmmg@gmail.com."
+    }
+    
     try:
-        # Probamos una llamada simple a la API de Resend con un timeout agresivo
-        url = "https://api.resend.com/api-keys"
-        headers = {"Authorization": f"Bearer {resend_key}"}
-        response = requests.get(url, headers=headers, timeout=3)
-        
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
         return jsonify({
             "status_code": response.status_code,
-            "message": "Conexión exitosa" if response.status_code == 200 else "Error en respuesta",
+            "message": "Enviado" if response.status_code in [200, 201] else "Error en respuesta",
             "detail": response.json() if response.ok else response.text
         })
     except Exception as e:
-        return jsonify({"error": f"Fallo de conexión: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/test_env_keys', methods=['GET'])
 def test_env_keys():
