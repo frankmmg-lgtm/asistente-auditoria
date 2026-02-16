@@ -6,6 +6,11 @@ import os
 app = Flask(__name__)
 CORS(app) # Habilitar CORS para todas las rutas
 
+@app.route('/', methods=['GET'])
+def home():
+    """Ruta de verificación para confirmar que el servidor está activo."""
+    return jsonify({"status": "ok", "message": "Servidor de auditoría activo"}), 200
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """
