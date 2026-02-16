@@ -49,36 +49,46 @@ def webhook():
 
 @app.route('/test_email', methods=['GET'])
 def test_email():
-    """Ruta interna para probar la conectividad con la API de Resend."""
+    """Ruta interna para verificar la configuración sin ataques de red."""
     from auditor_assistant import RESEND_API_KEY, SMTP_USER
-    import requests
     
-    resultados = {
+    # Mask key for safety
+    masked_key = "No configurada"
+    if RESEND_API_KEY:
+        masked_key = f"{RESEND_API_KEY[:6]}...{RESEND_API_KEY[-4:]}"
+
+    return jsonify({
+        "status": "diagnostic",
         "config": {
-            "api_key_configured": bool(RESEND_API_KEY),
+            "resend_api_key_present": bool(RESEND_API_KEY),
+            "resend_api_key_masked": masked_key,
             "from_email": SMTP_USER
         },
-        "tests": {}
-    }
+        "instructions": "Prueba /test_resend para verificar la conexión real con Resend.com"
+    })
+
+@app.route('/test_resend', methods=['GET'])
+def test_resend():
+    """Prueba real de conexión con la API de Resend."""
+    from auditor_assistant import RESEND_API_KEY
+    import requests
     
     if not RESEND_API_KEY:
-        resultados["tests"]["api"] = "❌ RESEND_API_KEY no encontrada"
-        return jsonify(resultados)
+        return jsonify({"error": "RESEND_API_KEY no configurada"}), 400
 
     try:
-        # Probamos llamando a la API de Resend (solo para verificar validez de la clave)
+        # Probamos una llamada simple a la API de Resend con un timeout agresivo
         url = "https://api.resend.com/api-keys"
         headers = {"Authorization": f"Bearer {RESEND_API_KEY}"}
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=3)
         
-        if response.status_code == 200:
-            resultados["tests"]["api"] = "✅ API Key válida y conectada"
-        else:
-            resultados["tests"]["api"] = f"❌ Error de API ({response.status_code}): {response.text}"
+        return jsonify({
+            "status_code": response.status_code,
+            "message": "Conexión exitosa" if response.status_code == 200 else "Error en respuesta",
+            "detail": response.json() if response.ok else response.text
+        })
     except Exception as e:
-        resultados["tests"]["api"] = f"❌ Fallo de conexión: {str(e)}"
-        
-    return jsonify(resultados)
+        return jsonify({"error": f"Fallo de conexión: {str(e)}"}), 500
 
 if __name__ == '__main__':
     # Ejecutar en el puerto 5000 (debug=False para evitar reinicios bruscos en Windows)
