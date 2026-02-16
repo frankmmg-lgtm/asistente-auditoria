@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from auditor_assistant import procesar_nuevo_contacto
+# from auditor_assistant import procesar_nuevo_contacto (Movido a rutas locales para evitar bloqueos)
 import os
 import traceback
 
@@ -35,6 +35,9 @@ def webhook():
         return jsonify({"error": "Falta el campo email"}), 400
 
     try:
+        # Importación local para evitar cuelgues al inicio
+        from auditor_assistant import procesar_nuevo_contacto
+        
         # Llamamos a nuestra lógica principal
         reporte = procesar_nuevo_contacto(email_data)
         return jsonify({
