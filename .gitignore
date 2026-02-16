@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+seguimiento_leads.csv
+test_emails.json
+assets/ (si son muy pesados, pero mejor incluirlos si son del diseño)
